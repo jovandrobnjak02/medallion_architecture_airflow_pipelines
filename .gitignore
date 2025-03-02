@@ -4,3 +4,7 @@ logs
 plugins
 .env
 *.csv
+*.parquet
+spark-jars
+apps
+.data

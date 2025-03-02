@@ -13,7 +13,7 @@ BUCKET_NAME = "bronze-layer"
     schedule=None,
     start_date=datetime.datetime(2021, 1, 1, tzinfo=datetime.timezone.utc),
     catchup=False,
-    tags=["bronze"],
+    tags=["bronze", "medallion_schema"],
 )
 def bronze_layer_dag():
     
