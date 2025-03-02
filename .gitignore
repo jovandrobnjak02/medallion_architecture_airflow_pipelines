@@ -1,0 +1,6 @@
+__pycache__
+config
+logs
+plugins
+.env
+*.csv
