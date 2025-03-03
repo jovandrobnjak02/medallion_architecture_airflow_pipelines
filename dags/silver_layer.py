@@ -40,7 +40,7 @@ def insert_to_postgres(table_name: str, dataframe: pd.DataFrame):
     try:
         
         hook.insert_rows(
-            table=f"f1_data_vault.{table_name}",
+            table=f"silver.{table_name}",
             rows=data_tuples,
             target_fields=columns,
             replace=False, 
@@ -58,6 +58,7 @@ def insert_to_postgres(table_name: str, dataframe: pd.DataFrame):
     schedule_interval="@daily",
     catchup=False,
     description="ETL DAG-> Bronze to Silver Layer.",
+    tags=["medallion_schema", "silver"]
 )
 def silver_layer_dag():
 
@@ -69,40 +70,40 @@ def silver_layer_dag():
 
         try:
 
-            truncate_query = """
+            truncate_query = '''
                 TRUNCATE TABLE 
-                    f1_data_vault.hub_race, 
-                    f1_data_vault.sat_race, 
-                    f1_data_vault.hub_driver, 
-                    f1_data_vault.sat_driver, 
-                    f1_data_vault.hub_constructor, 
-                    f1_data_vault.hub_circuit, 
-                    f1_data_vault.sat_constructor, 
-                    f1_data_vault.link_results, 
-                    f1_data_vault.sat_results, 
-                    f1_data_vault.link_qualifying, 
-                    f1_data_vault.sat_qualifying, 
-                    f1_data_vault.link_laps, 
-                    f1_data_vault.sat_laps, 
-                    f1_data_vault.link_pitstops, 
-                    f1_data_vault.sat_pitstops, 
-                    f1_data_vault.link_fastestlap, 
-                    f1_data_vault.sat_fastestlap, 
-                    f1_data_vault.hub_driverstandings, 
-                    f1_data_vault.link_standings_driver, 
-                    f1_data_vault.sat_driverstandings, 
-                    f1_data_vault.hub_constructorstandings, 
-                    f1_data_vault.link_standings_constructor, 
-                    f1_data_vault.sat_constructorstandings,
-                    f1_data_vault.link_result_status,
-                    f1_data_vault.link_race_circuit,
-                    f1_data_vault.sat_status,
-                    f1_data_vault.link_practices,
-                    f1_data_vault.sat_practices,
-                    f1_data_vault.link_sprints,
-                    f1_data_vault.sat_sprints
+                    silver.hub_race, 
+                    silver.sat_race, 
+                    silver.hub_driver, 
+                    silver.sat_driver, 
+                    silver.hub_constructor, 
+                    silver.hub_circuit, 
+                    silver.sat_constructor, 
+                    silver.link_results, 
+                    silver.sat_results, 
+                    silver.link_qualifying, 
+                    silver.sat_qualifying, 
+                    silver.link_laps, 
+                    silver.sat_laps, 
+                    silver.link_pitstops, 
+                    silver.sat_pitstops, 
+                    silver.link_fastestlap, 
+                    silver.sat_fastestlap, 
+                    silver.hub_driverstandings, 
+                    silver.link_standings_driver, 
+                    silver.sat_driverstandings, 
+                    silver.hub_constructorstandings, 
+                    silver.link_standings_constructor, 
+                    silver.sat_constructorstandings,
+                    silver.link_result_status,
+                    silver.link_race_circuits,
+                    silver.sat_status,
+                    silver.link_practices,
+                    silver.sat_practices,
+                    silver.link_sprints,
+                    silver.sat_sprints
                 CASCADE;
-            """
+            '''
 
             cursor.execute(truncate_query)
             conn.commit()
@@ -598,20 +599,21 @@ def silver_layer_dag():
 
     # ---------------------- LOAD HUB TABLES ----------------------
     @task
-    def load_hub_tables(race_dict, driver_dict, constructors_dict, constructor_standings_dict, driver_standings_dict,race_circuits_dict):
+    def load_hub_tables(race_dict, driver_dict, constructors_dict, constructor_standings_dict, driver_standings_dict,race_circuits_dict, status_dict):
         insert_to_postgres("hub_race", race_dict["hub_race"])
         insert_to_postgres("hub_driver", driver_dict["hub_driver"])
         insert_to_postgres("hub_constructor", constructors_dict["hub_constructor"])
         insert_to_postgres("hub_constructorstandings", constructor_standings_dict["hub_constructorstandings"])
         insert_to_postgres("hub_driverstandings", driver_standings_dict["hub_driverstandings"])
         insert_to_postgres("hub_circuit", race_circuits_dict["hub_circuit"])
+        insert_to_postgres("sat_status", status_dict["sat_status"])
 
     # ---------------------- LOAD LINK TABLES ----------------------
     @task
     def load_link_tables(qualifying_dict, race_circuits_dict, results_dict, laps_dict, pitstops_dict, fastest_laps_dict, 
                         constructor_standings_dict, driver_standings_dict, status_dict, practices_dict, sprints_dict):
         insert_to_postgres("link_qualifying", qualifying_dict["link_qualifying"])
-        insert_to_postgres("link_race_circuit", race_circuits_dict["link_race_circuit"])
+        insert_to_postgres("link_race_circuits", race_circuits_dict["link_race_circuit"])
         insert_to_postgres("link_results", results_dict["link_results"])
         insert_to_postgres("link_laps", laps_dict["link_laps"])
         insert_to_postgres("link_pitstops", pitstops_dict["link_pitstops"])
@@ -625,8 +627,7 @@ def silver_layer_dag():
     # ---------------------- LOAD SATELLITE TABLES ----------------------
     @task
     def load_satellite_tables(race_dict, driver_dict, constructors_dict, qualifying_dict, race_circuits_dict, results_dict, 
-                            laps_dict, pitstops_dict, fastest_laps_dict, constructor_standings_dict, driver_standings_dict,
-                            status_dict, practices_dict, sprints_dict):
+                            laps_dict, pitstops_dict, fastest_laps_dict, constructor_standings_dict, driver_standings_dict, practices_dict, sprints_dict):
         insert_to_postgres("sat_race", race_dict["sat_race"])
         insert_to_postgres("sat_driver", driver_dict["sat_driver"])
         insert_to_postgres("sat_constructor", constructors_dict["sat_constructor"])
@@ -638,7 +639,6 @@ def silver_layer_dag():
         insert_to_postgres("sat_fastestlap", fastest_laps_dict["sat_fastestlap"])
         insert_to_postgres("sat_constructorstandings", constructor_standings_dict["sat_constructorstandings"])
         insert_to_postgres("sat_driverstandings", driver_standings_dict["sat_driverstandings"])
-        insert_to_postgres("sat_status", status_dict["sat_status"])
         insert_to_postgres("sat_practices", practices_dict["sat_practices"])
         insert_to_postgres("sat_sprints", sprints_dict["sat_sprints"])
 
@@ -678,12 +678,11 @@ def silver_layer_dag():
     sprints_data = transform_sprints(sprints_df)
 
     # Load Data in Proper Order (HUBS → LINKS → SATELLITES)
-    load_hubs = load_hub_tables(race_data, driver_data, constructors_data, constructor_standings_data, driver_standings_data, race_circuits_data)
+    load_hubs = load_hub_tables(race_data, driver_data, constructors_data, constructor_standings_data, driver_standings_data, race_circuits_data,status_data)
     load_links = load_link_tables(qualifying_data, race_circuits_data,results_data, laps_data, pitstops_data, fastest_laps_data,
                                 constructor_standings_data, driver_standings_data,  status_data, practices_data, sprints_data)
     load_sats = load_satellite_tables(race_data, driver_data, constructors_data, qualifying_data, race_circuits_data, results_data,
-                                    laps_data, pitstops_data, fastest_laps_data, constructor_standings_data, driver_standings_data,
-                                    status_data, practices_data, sprints_data)
+                                    laps_data, pitstops_data, fastest_laps_data, constructor_standings_data, driver_standings_data, practices_data, sprints_data)
 
     # -------- DEPENDENCIES ----------
     db_reset >> [

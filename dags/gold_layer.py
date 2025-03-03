@@ -20,6 +20,7 @@ default_args = {
    catchup=False,
    template_searchpath="/opt/airflow/dags/sql",
    description="Transforms Data Vault (Silver) to Star Schema (Gold) using SQL operators.",
+   tags=["medallion_schema", "gold"]
 )
 def gold_layer_dag():
     
@@ -33,19 +34,19 @@ def gold_layer_dag():
         try:
             truncate_query = """
                 TRUNCATE TABLE 
-                    star_schema.Dim_Circuit, 
-                    star_schema.Dim_Race, 
-                    star_schema.Dim_Driver, 
-                    star_schema.Dim_Constructor, 
-                    star_schema.Dim_Status, 
-                    star_schema.Dim_DriverStandings, 
-                    star_schema.Dim_ConstructorStandings, 
-                    star_schema.Dim_Qualifying, 
-                    star_schema.Dim_Practice, 
-                    star_schema.Dim_Laps, 
-                    star_schema.Dim_Sprint, 
-                    star_schema.Dim_Pit_Stops, 
-                    star_schema.Fact_Race_Results
+                    gold.Dim_Circuit, 
+                    gold.Dim_Race, 
+                    gold.Dim_Driver, 
+                    gold.Dim_Constructor, 
+                    gold.Dim_Status, 
+                    gold.Dim_DriverStandings, 
+                    gold.Dim_ConstructorStandings, 
+                    gold.Dim_Qualifying, 
+                    gold.Dim_Practice, 
+                    gold.Dim_Laps, 
+                    gold.Dim_Sprint, 
+                    gold.Dim_Pit_Stops, 
+                    gold.Fact_Race_Results
                 RESTART IDENTITY CASCADE;
             """
         

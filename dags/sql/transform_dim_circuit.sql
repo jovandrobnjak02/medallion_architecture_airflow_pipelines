@@ -1,4 +1,4 @@
-INSERT INTO star_schema.Dim_Circuit (circuitid, circuitref, name_y, location, country, lat, lng, alt, url_y)
+INSERT INTO gold.Dim_Circuit (circuitid, circuitref, name_y, location, country, lat, lng, alt, url_y)
 SELECT 
     hc.circuitid, 
     sc.circuitref, 
@@ -9,5 +9,5 @@ SELECT
     sc.lng, 
     sc.alt, 
     sc.url_y
-FROM f1_data_vault.hub_circuit hc
-JOIN f1_data_vault.sat_circuit sc ON hc.circuitid = sc.circuitid;
+FROM silver.hub_circuit hc
+JOIN silver.sat_circuit sc ON hc.circuitid = sc.circuitid;
